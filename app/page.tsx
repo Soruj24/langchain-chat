@@ -1,70 +1,142 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
-  
+import { useStream } from "@langchain/react";
+import {
+  HumanMessage,
+  AIMessage,
+  ToolMessage,
+  type BaseMessage,
+} from "@langchain/core/messages";
+
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from "@/components/ai-elements/conversation";
+import {
+  Message,
+  MessageContent,
+  MessageResponse,
+} from "@/components/ai-elements/message";
+import {
+  Tool,
+  ToolHeader,
+  ToolContent,
+  ToolInput,
+  ToolOutput,
+} from "@/components/ai-elements/tool";
+import {
+  Reasoning,
+  ReasoningTrigger,
+  ReasoningContent,
+} from "@/components/ai-elements/reasoning";
+import {
+  PromptInput,
+  PromptInputBody,
+  PromptInputTextarea,
+  PromptInputFooter,
+  PromptInputSubmit,
+} from "@/components/ai-elements/prompt-input";
+
+function getReasoningText(msg: AIMessage) {
+  return msg.contentBlocks.find((block ) => block.type === "reasoning")?.reasoning ?? "";
+}
+
+function getTextContent(msg: AIMessage) {
+  return msg.text;
+}
+
+function getToolCalls(msg: AIMessage, messages: BaseMessage[]) {
+  const outputs = new Map<string, unknown>();
+  for (const m of messages) {
+    if (ToolMessage.isInstance(m) && m.tool_call_id) {
+      outputs.set(m.tool_call_id, m.content);
+    }
+  }
+
+  return (msg.tool_calls ?? []).map((tc) => {
+    const output = tc.id ? outputs.get(tc.id) : undefined;
+    return {
+      id: tc.id,
+      name: tc.name,
+      args: tc.args,
+      output,
+      state: output === undefined ? ("input-available" as const) : ("output-available" as const),
+    };
+  });
+}
+
+export default function Chat() {
+  const stream = useStream({
+    apiUrl: "http://localhost:4000",
+    assistantId: "ai_elements",
+  });
+
+  // TEMP DEBUG: expose stream for headless verification
+  (globalThis as unknown as { __stream?: unknown }).__stream = stream;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="flex flex-col h-dvh">
+      <Conversation className="flex-1">
+        <ConversationContent>
+          {stream.messages.map((msg, i) => {
+            if (HumanMessage.isInstance(msg)) {
+              return (
+                <Message key={i} from="user">
+                  <MessageContent>{msg.text}</MessageContent>
+                </Message>
+              );
+            }
+            if (AIMessage.isInstance(msg)) {
+              return (
+                <div key={i}>
+                  {/* Reasoning block (shows when model emits thinking tokens) */}
+                  <Reasoning>
+                    <ReasoningTrigger />
+                    <ReasoningContent>{getReasoningText(msg)}</ReasoningContent>
+                  </Reasoning>
+
+                  {/* Inline tool calls with input/output display */}
+                  {getToolCalls(msg, stream.messages).map((tc, j) => (
+                    <Tool key={tc.id ?? `${i}-${j}`} defaultOpen>
+                      <ToolHeader type={`tool-${tc.name}`} state={tc.state} />
+                      <ToolContent>
+                        <ToolInput input={tc.args} />
+                        {tc.output !== undefined && (
+                          <ToolOutput output={tc.output} errorText={undefined} />
+                        )}
+                      </ToolContent>
+                    </Tool>
+                  ))}
+
+                  {/* Streamed text response */}
+                  <Message from="assistant">
+                    <MessageContent>
+                      <MessageResponse>{getTextContent(msg)}</MessageResponse>
+                    </MessageContent>
+                  </Message>
+                </div>
+              );
+            }
+          })}
+        </ConversationContent>
+        <ConversationScrollButton />
+      </Conversation>
+
+      <PromptInput
+        onSubmit={({ text }) =>
+          stream.submit({ messages: [{ type: "human", content: text }] })
+        }
+      >
+        <PromptInputBody>
+          <PromptInputTextarea placeholder="Ask me something..." />
+        </PromptInputBody>
+        <PromptInputFooter>
+          <PromptInputSubmit
+            status={stream.isLoading ? "streaming" : "ready"}
+          />
+        </PromptInputFooter>
+      </PromptInput>
     </div>
   );
-}
+}    
