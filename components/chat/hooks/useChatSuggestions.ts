@@ -10,6 +10,8 @@ import type { FollowUpsState } from "../types";
 const EMPTY: FollowUpsState = { items: [], forId: null };
 
 type UseChatSuggestionsOptions = {
+  /** Admin-controlled flag. Disabled means no side-channel calls at all. */
+  enabled: boolean;
   /** True only after a run ended with reason `success`. */
   completed: boolean;
   isLoading: boolean;
@@ -28,6 +30,7 @@ type UseChatSuggestionsOptions = {
  * never show stale pills.
  */
 export function useChatSuggestions({
+  enabled,
   completed,
   isLoading,
   hasError,
@@ -46,6 +49,10 @@ export function useChatSuggestions({
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      setState(EMPTY);
+      return;
+    }
     if (!completed || isLoading || hasError) return;
     if (!answerText || !answerKey) return;
     if (requestedKey.current === answerKey) return;
@@ -57,9 +64,10 @@ export function useChatSuggestions({
       if (currentRequest !== requestId.current) return;
       setState({ items, forId: answerKey });
     });
-  }, [answerKey, answerText, client, completed, hasError, isLoading]);
+  }, [answerKey, answerText, client, completed, enabled, hasError, isLoading]);
 
   const visible =
+    enabled &&
     !isLoading &&
     !hasError &&
     answerKey !== null &&

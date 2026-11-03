@@ -2,11 +2,16 @@
 
 import { useCallback, useState } from "react";
 
+import { Spinner } from "@/components/ui/spinner";
+import { apiRequest } from "@/lib/client-api";
+import type { UserRole } from "@/lib/db/models/user";
+
 import { ChatComposer } from "./components/ChatComposer";
 import { ChatEmptyState } from "./components/ChatEmptyState";
 import { ChatHeader } from "./components/ChatHeader";
 import { ChatMessages } from "./components/ChatMessages";
-import { API_URL, ui } from "./config";
+import type { ChatRuntimeConfig } from "./config";
+import { ui } from "./config";
 import { useChatStream } from "./hooks/useChatStream";
 import { useChatSuggestions } from "./hooks/useChatSuggestions";
 import { useChatThreads } from "./hooks/useChatThreads";
@@ -14,10 +19,22 @@ import { useIsDesktop } from "./hooks/useIsDesktop";
 import { ThreadSidebar } from "./thread-sidebar/ThreadSidebar";
 import { useThreads } from "./thread-sidebar/hooks/useThreads";
 
-export default function Chat() {
+type ChatProps = {
+  user: { name: string; email: string; role: UserRole };
+  config: ChatRuntimeConfig;
+  initialThreadId?: string | null;
+};
+
+export default function Chat({ user, config, initialThreadId = null }: ChatProps) {
   const isDesktop = useIsDesktop();
   const [sidebarOpen, setSidebarOpen] = useState<boolean | null>(null);
   const sidebarVisible = sidebarOpen ?? isDesktop;
+
+  const [model, setModel] = useState(() =>
+    config.models.includes(config.defaultModel)
+      ? config.defaultModel
+      : (config.models[0] ?? config.defaultModel)
+  );
 
   // On desktop the open sidebar owns the brand + collapse control, so the main
   // header shows only its actions. On mobile the sidebar is an overlay, so the
@@ -28,12 +45,33 @@ export default function Chat() {
     if (window.innerWidth < 768) setSidebarOpen(false);
   }, []);
 
-  const { threads, loading, error, refresh, remove } = useThreads(API_URL);
+  const { threads, loading, error, refresh, remove } = useThreads();
+
+  const handleRunCompleted = useCallback(
+    async (threadId: string | null) => {
+      if (threadId) {
+        try {
+          await apiRequest<{ conversation: unknown }>(
+            `/api/threads/${encodeURIComponent(threadId)}/sync`,
+            {
+              method: "POST",
+              body: JSON.stringify({ model }),
+            }
+          );
+        } catch {
+          // The list reconciliation will repair this thread on the next load.
+        }
+      }
+      await refresh();
+    },
+    [model, refresh]
+  );
 
   const {
     threadId,
     messages,
     isLoading,
+    isThreadLoading,
     completion,
     displayError,
     currentAnswerText,
@@ -46,10 +84,13 @@ export default function Chat() {
     openThread,
     startNewChat,
   } = useChatStream({
-    onRunCompleted: refresh,
+    model,
+    initialThreadId,
+    onRunCompleted: handleRunCompleted,
   });
 
   const { suggestions, reset: resetSuggestions } = useChatSuggestions({
+    enabled: config.suggestionsEnabled,
     completed: completion?.ok === true,
     isLoading,
     hasError: displayError !== null,
@@ -92,6 +133,7 @@ export default function Chat() {
   return (
     <div className={`flex h-dvh ${ui.page}`}>
       <ThreadSidebar
+        appName={config.appName}
         threads={threads}
         loading={loading}
         error={error}
@@ -105,14 +147,31 @@ export default function Chat() {
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <ChatHeader
+          appName={config.appName}
           showBrand={showHeaderBrand}
           sidebarVisible={sidebarVisible}
+          user={user}
+          models={config.models}
+          model={model}
+          modelSelectionEnabled={config.modelSelectionEnabled}
+          onModelChange={setModel}
           onToggleSidebar={() => setSidebarOpen(!sidebarVisible)}
           onNewChat={newChat}
         />
 
-        {isEmpty ? (
-          <ChatEmptyState composer={composer} onSelectPrompt={handleSend} />
+        {isThreadLoading && isEmpty ? (
+          <main className="flex flex-1 items-center justify-center">
+            <span className={`flex items-center gap-2 text-sm ${ui.muted}`}>
+              <Spinner className="size-4" />
+              Loading conversation…
+            </span>
+          </main>
+        ) : isEmpty ? (
+          <ChatEmptyState
+            composer={composer}
+            title={config.welcomeMessage}
+            onSelectPrompt={handleSend}
+          />
         ) : (
           <>
             <ChatMessages
@@ -128,7 +187,8 @@ export default function Chat() {
             <div className="mx-auto w-full max-w-[44rem] px-4 pb-5">
               {composer}
               <p className={`mt-2 ${ui.disclaimer} ${ui.muted}`}>
-                Assistant can make mistakes. Please double-check responses.
+                {config.appName} can make mistakes. Please double-check
+                responses.
               </p>
             </div>
           </>

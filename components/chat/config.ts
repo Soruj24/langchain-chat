@@ -1,8 +1,20 @@
 import type { StarterPrompt } from "./types";
 
-/** URL of the LangGraph server. Mirrors `client/.env.example`. */
-export const API_URL =
-  process.env.NEXT_PUBLIC_LANGGRAPH_URL ?? "http://localhost:4000";
+/**
+ * Every browser request goes through the authenticated Next.js proxy. The
+ * real LangGraph URL is a server-only environment variable.
+ */
+export const API_URL = "/api/langgraph";
+
+/** Public runtime settings passed from the server page into the chat shell. */
+export type ChatRuntimeConfig = {
+  appName: string;
+  welcomeMessage: string;
+  models: string[];
+  defaultModel: string;
+  modelSelectionEnabled: boolean;
+  suggestionsEnabled: boolean;
+};
 
 /** Graph that answers the conversation. Registered in `server/langgraph.json`. */
 export const CHAT_ASSISTANT_ID = "ai_elements";

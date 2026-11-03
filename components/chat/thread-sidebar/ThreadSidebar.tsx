@@ -11,6 +11,7 @@ import type { ThreadItem } from "./types";
 const SERIF = 'var(--font-serif), Georgia, "Times New Roman", serif';
 
 type ThreadSidebarProps = {
+  appName: string;
   threads: ThreadItem[];
   loading: boolean;
   error: boolean;
@@ -23,6 +24,7 @@ type ThreadSidebarProps = {
 };
 
 export function ThreadSidebar({
+  appName,
   threads,
   loading,
   error,
@@ -57,7 +59,7 @@ export function ThreadSidebar({
               className="text-[17px] font-medium"
               style={{ fontFamily: SERIF }}
             >
-              Assistant
+              {appName}
             </span>
           </div>
           <button

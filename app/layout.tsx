@@ -4,6 +4,8 @@ import { Geist, Geist_Mono, Source_Serif_4 } from "next/font/google";
 
 import "./globals.css";
 
+import { Providers } from "./providers";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -49,7 +51,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Script id="theme-init" strategy="beforeInteractive">
           {themeScript}
         </Script>
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

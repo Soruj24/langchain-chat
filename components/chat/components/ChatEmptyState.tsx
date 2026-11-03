@@ -9,11 +9,13 @@ import { SERIF, STARTER_PROMPTS, ui } from "../config";
 type ChatEmptyStateProps = {
   /** The composer is owned by the page so it can be shared with the thread view. */
   composer: ReactNode;
+  title?: string;
   onSelectPrompt: (prompt: string) => void;
 };
 
 export function ChatEmptyState({
   composer,
+  title = "What can I help you with?",
   onSelectPrompt,
 }: ChatEmptyStateProps) {
   return (
@@ -24,7 +26,7 @@ export function ChatEmptyState({
           className="text-[34px] leading-tight tracking-tight sm:text-[42px]"
           style={{ fontFamily: SERIF }}
         >
-          What can I help you with?
+          {title}
         </h1>
       </div>
 

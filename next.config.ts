@@ -1,12 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   experimental: {
     agentFeedback: true,
   },
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Authentication reads cookies and the database on every request, so the
+  // cache-components prerender model would fight the auth boundary. Keep the
+  // app on the standard (dynamic) rendering model instead.
+  cacheComponents: false,
+  partialPrefetching: false,
 };
 
 export default nextConfig;
