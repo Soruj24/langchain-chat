@@ -5,7 +5,7 @@ import { useStream } from "@langchain/react";
 
 import { apiRequest } from "@/lib/client-api";
 
-import { API_URL, CHAT_ASSISTANT_ID } from "../config";
+import { CHAT_ASSISTANT_ID, langGraphApiUrl } from "../config";
 import { createId } from "../lib/ids";
 import {
   checkFinalAnswer,
@@ -55,8 +55,11 @@ export function useChatStream({
   const sendingRef = useRef(0);
   const threadIdRef = useRef<string | null>(initialThreadId);
 
+  // The SDK needs an absolute URL; resolve the proxy path once per mount.
+  const apiUrl = useMemo(() => langGraphApiUrl(), []);
+
   const stream = useStream({
-    apiUrl: API_URL,
+    apiUrl,
     assistantId: CHAT_ASSISTANT_ID,
     threadId: selectedThreadId,
     onCompleted: (info) => {

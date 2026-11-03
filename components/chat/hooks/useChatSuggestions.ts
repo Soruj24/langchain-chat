@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Client } from "@langchain/langgraph-sdk";
 
-import { API_URL } from "../config";
+import { langGraphApiUrl } from "../config";
 import { requestSuggestions } from "../lib/suggestion-utils";
 import type { FollowUpsState } from "../types";
 
@@ -37,7 +37,10 @@ export function useChatSuggestions({
   answerText,
   answerKey,
 }: UseChatSuggestionsOptions) {
-  const client = useMemo(() => new Client({ apiUrl: API_URL }), []);
+  const client = useMemo(
+    () => new Client({ apiUrl: langGraphApiUrl() }),
+    []
+  );
   const [state, setState] = useState<FollowUpsState>(EMPTY);
   const requestId = useRef(0);
   const requestedKey = useRef<string | null>(null);

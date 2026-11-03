@@ -6,6 +6,22 @@ import type { StarterPrompt } from "./types";
  */
 export const API_URL = "/api/langgraph";
 
+/**
+ * The LangGraph SDK resolves every request with `new URL(apiUrl + path)`,
+ * which rejects a relative path in the browser ("Failed to construct 'URL'").
+ * Resolve the proxy path against the current origin before handing it to the
+ * SDK. The fallback only matters during server rendering, where the SDK never
+ * issues a request.
+ */
+export function langGraphApiUrl(): string {
+  const base =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000");
+
+  return new URL(API_URL, base).toString().replace(/\/$/, "");
+}
+
 /** Public runtime settings passed from the server page into the chat shell. */
 export type ChatRuntimeConfig = {
   appName: string;
