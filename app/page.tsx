@@ -39,7 +39,27 @@ import {
 } from "@/components/ai-elements/prompt-input";
 
 function getReasoningText(msg: AIMessage) {
-  return msg.contentBlocks.find((block ) => block.type === "reasoning")?.reasoning ?? "";
+  const blocks = msg.contentBlocks as unknown as Array<Record<string, unknown>>;
+  if (Array.isArray(blocks)) {
+    const parts = blocks
+      .filter((block) => block?.type === "reasoning" || block?.type === "thinking")
+      .map((block) =>
+        typeof block.reasoning === "string"
+          ? block.reasoning
+          : typeof block.text === "string"
+            ? block.text
+            : ""
+      )
+      .filter((part) => part.length > 0);
+    if (parts.length > 0) return parts.join("");
+  }
+
+  // Fallback for providers (e.g. Ollama without `think`) that leave the
+  // reasoning in additional_kwargs instead of content blocks.
+  const kwargs = msg.additional_kwargs as Record<string, unknown> | undefined;
+  if (typeof kwargs?.reasoning_content === "string") return kwargs.reasoning_content;
+  if (typeof kwargs?.reasoning === "string") return kwargs.reasoning;
+  return "";
 }
 
 function getTextContent(msg: AIMessage) {
@@ -71,10 +91,7 @@ export default function Chat() {
     apiUrl: "http://localhost:4000",
     assistantId: "ai_elements",
   });
-
-  // TEMP DEBUG: expose stream for headless verification
-  (globalThis as unknown as { __stream?: unknown }).__stream = stream;
-
+  
   return (
     <div className="flex flex-col h-dvh">
       <Conversation className="flex-1">
@@ -88,13 +105,17 @@ export default function Chat() {
               );
             }
             if (AIMessage.isInstance(msg)) {
+              const reasoningText = getReasoningText(msg);
+              const isStreaming = stream.isLoading && i === stream.messages.length - 1;
               return (
                 <div key={i}>
                   {/* Reasoning block (shows when model emits thinking tokens) */}
-                  <Reasoning>
-                    <ReasoningTrigger />
-                    <ReasoningContent>{getReasoningText(msg)}</ReasoningContent>
-                  </Reasoning>
+                  {reasoningText.length > 0 && (
+                    <Reasoning isStreaming={isStreaming}>
+                      <ReasoningTrigger />
+                      <ReasoningContent>{reasoningText}</ReasoningContent>
+                    </Reasoning>
+                  )}
 
                   {/* Inline tool calls with input/output display */}
                   {getToolCalls(msg, stream.messages).map((tc, j) => (
