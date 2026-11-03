@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/static-components -- motion components are cached at module scope */
+
 import { cn } from "@/lib/utils";
 import type { MotionProps } from "motion/react";
 import { motion } from "motion/react";
