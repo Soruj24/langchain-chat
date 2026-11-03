@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIcon,
   MessageSquareIcon,
@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { apiRequest } from "@/lib/client-api";
+import { useAsyncEffect } from "@/lib/hooks/use-async-effect";
 import type { SafeActivity } from "@/lib/db/models/activity";
 import type { SafeUser } from "@/lib/db/models/user";
 
@@ -61,9 +62,7 @@ export function AdminOverview() {
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useAsyncEffect(load);
 
   return (
     <div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { CheckIcon, RotateCcwIcon, SaveIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/client-api";
+import { useAsyncEffect } from "@/lib/hooks/use-async-effect";
 import type { SystemSettingsData } from "@/lib/db/settings";
 
 import {
@@ -72,9 +73,7 @@ export function SystemSettingsForm() {
     }
   }, [apply]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useAsyncEffect(load);
 
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

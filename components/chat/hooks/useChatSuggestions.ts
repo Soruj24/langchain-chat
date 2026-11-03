@@ -49,10 +49,7 @@ export function useChatSuggestions({
   }, []);
 
   useEffect(() => {
-    if (!enabled) {
-      setState(EMPTY);
-      return;
-    }
+    if (!enabled) return;
     if (!completed || isLoading || hasError) return;
     if (!answerText || !answerKey) return;
     if (requestedKey.current === answerKey) return;

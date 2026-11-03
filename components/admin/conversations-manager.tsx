@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   EyeIcon,
   RefreshCwIcon,
@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { apiRequest } from "@/lib/client-api";
+import { useAsyncEffect } from "@/lib/hooks/use-async-effect";
 import type { SafeConversation } from "@/lib/db/models/conversation";
 
 import {
@@ -111,9 +112,9 @@ export function ConversationsManager() {
     }
   }, []);
 
-  useEffect(() => {
-    void load("", 1);
-  }, [load]);
+  const loadInitial = useCallback(() => load("", 1), [load]);
+
+  useAsyncEffect(loadInitial);
 
   const openDetail = useCallback(async (conversation: AdminConversation) => {
     setDetail(conversation);
@@ -137,7 +138,7 @@ export function ConversationsManager() {
     }
   }, []);
 
-  const confirmDelete = useCallback(async () => {
+  async function confirmDelete() {
     if (!pendingDelete) return;
     setDeleting(true);
     setError(null);
@@ -166,7 +167,7 @@ export function ConversationsManager() {
     } finally {
       setDeleting(false);
     }
-  }, [data?.total, detail?.threadId, load, page, pendingDelete, search]);
+  }
 
   return (
     <div>

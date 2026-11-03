@@ -12,6 +12,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -46,23 +47,25 @@ export function UserMenu({ name, email, role }: UserMenuProps) {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-60">
-        <DropdownMenuLabel className="px-2 py-1.5">
-          <span className="block truncate text-sm font-medium text-foreground">
-            {name}
-          </span>
-          <span className="block truncate text-xs text-muted-foreground">
-            {email}
-          </span>
-        </DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="px-2 py-1.5">
+            <span className="block truncate text-sm font-medium text-foreground">
+              {name}
+            </span>
+            <span className="block truncate text-xs text-muted-foreground">
+              {email}
+            </span>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem render={<Link href="/dashboard" />}>
+        <DropdownMenuItem nativeButton={false} render={<Link href="/dashboard" />}>
           <LayoutDashboardIcon />
           Dashboard
         </DropdownMenuItem>
 
         {role === "admin" ? (
-          <DropdownMenuItem render={<Link href="/admin" />}>
+          <DropdownMenuItem nativeButton={false} render={<Link href="/admin" />}>
             <ShieldIcon />
             Admin panel
           </DropdownMenuItem>

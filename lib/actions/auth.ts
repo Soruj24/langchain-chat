@@ -33,6 +33,7 @@ export async function loginAction(
   _previous: AuthActionState = INITIAL,
   formData: FormData
 ): Promise<AuthActionState> {
+  void _previous;
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -71,6 +72,7 @@ export async function registerAction(
   _previous: AuthActionState = INITIAL,
   formData: FormData
 ): Promise<AuthActionState> {
+  void _previous;
   const parsed = registerSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),

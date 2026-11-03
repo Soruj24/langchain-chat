@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   AlertCircleIcon,
   ExternalLinkIcon,
@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { apiRequest } from "@/lib/client-api";
+import { useAsyncEffect } from "@/lib/hooks/use-async-effect";
 import type { SafeConversation } from "@/lib/db/models/conversation";
 
 type ConversationList = {
@@ -77,9 +78,9 @@ export function ConversationManager() {
     }
   }, []);
 
-  useEffect(() => {
-    void load("");
-  }, [load]);
+  const loadInitial = useCallback(() => load(""), [load]);
+
+  useAsyncEffect(loadInitial);
 
   const confirmDelete = useCallback(async () => {
     if (!pendingDelete) return;
@@ -206,6 +207,7 @@ export function ConversationManager() {
                 <Button
                   variant="ghost"
                   size="sm"
+                  nativeButton={false}
                   render={
                     <Link
                       href={`/chat?thread=${encodeURIComponent(item.threadId)}`}

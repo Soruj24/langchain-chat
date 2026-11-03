@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   RefreshCwIcon,
   SearchIcon,
@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { apiRequest } from "@/lib/client-api";
+import { useAsyncEffect } from "@/lib/hooks/use-async-effect";
 import type { SafeUser, UserRole } from "@/lib/db/models/user";
 
 import {
@@ -97,9 +98,12 @@ export function UsersManager({ currentUserId }: { currentUserId: string }) {
     }
   }, []);
 
-  useEffect(() => {
-    void load({ q: "", role: "all", active: "all", page: 1 });
-  }, [load]);
+  const loadInitial = useCallback(
+    () => load({ q: "", role: "all", active: "all", page: 1 }),
+    [load]
+  );
+
+  useAsyncEffect(loadInitial);
 
   function openManage(user: AdminUser) {
     setSelected(user);

@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { apiRequest } from "@/lib/client-api";
+import { useAsyncEffect } from "@/lib/hooks/use-async-effect";
 
 import type { ThreadItem } from "../types";
 import type { SafeConversation } from "@/lib/db/models/conversation";
@@ -42,9 +43,7 @@ export function useThreads() {
     }
   }, []);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  useAsyncEffect(refresh);
 
   const remove = useCallback(async (id: string) => {
     await apiRequest<{ deleted: boolean }>(

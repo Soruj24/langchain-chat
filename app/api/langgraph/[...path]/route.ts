@@ -96,7 +96,7 @@ async function handle(
   const method = request.method.toUpperCase();
   const body = await readBody(request);
 
-  const [root, second, third] = segments;
+  const [root, second] = segments;
 
   // ---- Assistants: read-only, required for graph metadata. -----------------
   if (root === "assistants") {

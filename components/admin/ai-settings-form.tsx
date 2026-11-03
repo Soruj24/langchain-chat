@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { CheckIcon, RotateCcwIcon, SaveIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/client-api";
+import { useAsyncEffect } from "@/lib/hooks/use-async-effect";
 import type { AiSettingsData } from "@/lib/db/settings";
 
 import {
@@ -80,15 +81,19 @@ export function AiSettingsForm() {
     }
   }, [apply]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useAsyncEffect(load);
 
-  useEffect(() => {
-    if (models.length && !models.includes(defaultModel)) {
-      setDefaultModel(models[0]);
+  /**
+   * Keep the default inside the allowed list as the model textarea changes,
+   * without a derived-state effect.
+   */
+  function changeModels(value: string) {
+    const next = parseModels(value);
+    setModelsText(value);
+    if (next.length > 0 && !next.includes(defaultModel)) {
+      setDefaultModel(next[0]);
     }
-  }, [defaultModel, models]);
+  }
 
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -165,7 +170,7 @@ export function AiSettingsForm() {
                 <Textarea
                   id="models"
                   value={modelsText}
-                  onChange={(event) => setModelsText(event.target.value)}
+                  onChange={(event) => changeModels(event.target.value)}
                   rows={4}
                   placeholder={"ornith:latest\nllama3.2:latest"}
                   className="min-h-28 font-mono text-xs"
